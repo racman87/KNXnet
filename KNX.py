@@ -99,14 +99,12 @@ class connectionKNX:
         disconnect_resp_object = knxnet.decode_frame(data_recv)
         return disconnect_resp_object
 
-
     def tunneling_ack_request(self, tunnel_channel_id):
         print('#4 Tunneling ACK')
         tunneling_ack = \
             knxnet.create_frame(knxnet.ServiceTypeDescriptor.TUNNELLING_ACK, tunnel_channel_id, 0)
         conn_req_dtgrm = tunneling_ack.frame  # -> Serializing
         self.sock.sendto(conn_req_dtgrm, (self.gateway_ip, self.gateway_port))
-
 
     def tunnelingRequest(self, conn_channel_id, data, data_size, dest_group_addr):
         print('#3 Tunneling request')
@@ -243,13 +241,12 @@ def main(argv):
 
     print(grp_add[0])
 
-    print('First arg is "', argv[0])
-    print('Second arg is "', argv[1])
-    print('Third arg is "', argv[2])
-    print('Fourth arg is "', argv[3])
+    print('data: ', argv[0])
+    print('size: ', argv[1])
+    print('acpi: ', argv[2])
+    print('group: ', argv[3])
 
     dest_addr_group = knxnet.GroupAddress.from_str(grp_add)
-
 
     c1 = connectionKNX("127.0.0.1", 3671)
 
@@ -262,5 +259,5 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    # run in terminal with 'python3 KNX.py arg1 arg2 arg3'
+    # run in terminal with 'python3 KNX.py arg1 arg2 arg3 arg4'
     main(sys.argv[1:])
