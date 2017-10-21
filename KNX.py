@@ -6,9 +6,9 @@ from knxnet import *
 
 # -> in this example, for sake of simplicity, the two ports are the same.
 def init(gateway_ip = "127.0.0.1",gateway_port = 3671):
-	# -> Socket creation
-	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	sock.bind(('', 3672))
+    # -> Socket creation
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind(('', 3672))
 
 
 print('-----------------------------------')
@@ -19,11 +19,11 @@ print('-----------------------------------')
 
 def send_data(dest_group_addr, data, data_size):
 
-	data_endpoint = ('0.0.0.0', 0)
-	control_endpoint = ('0.0.0.0', 0)
+    data_endpoint = ('0.0.0.0', 0)
+    control_endpoint = ('0.0.0.0', 0)
 
-	print('#1 Connection request')
-	conn_req_object = \
+    print('#1 Connection request')
+    conn_req_object = \
 		knxnet.create_frame(knxnet.ServiceTypeDescriptor.CONNECTION_REQUEST,
 							control_endpoint, data_endpoint)
 
@@ -109,6 +109,9 @@ def send_data(dest_group_addr, data, data_size):
 def read_data(dest_group_addr):
 	data_endpoint = ('0.0.0.0', 0)
 	control_endpoint = ('0.0.0.0', 0)
+
+
+    # TODO
 
 def main(argv):
     size = ''
