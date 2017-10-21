@@ -258,7 +258,7 @@ def main(argv):
 
     else:
         data=c1.read_data(dest_addr_group)
-        print('The value is : "',data)
+        print('The value is :',data)
 
 
 if __name__ == "__main__":
