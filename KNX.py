@@ -165,7 +165,7 @@ def main(argv):
     print('Third arg is "', argv[2])
     print('Fourth arg is "', argv[3])
 
-    dest_addr_group = knxnet.GroupAddress.from_str("1/4/1")
+    dest_addr_group = knxnet.GroupAddress.from_str(grp_add)
 
     c1 = connectionKNX("127.0.0.1", 3671)
     c1.send_data(data, size, dest_addr_group)
