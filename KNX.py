@@ -5,12 +5,14 @@ import sys
 from knxnet import *
 
 
-class connectionKNX:
-    def __init__(self):
-        # -> in this example, for sake of simplicity, the two ports are the same.
 
-        self.gateway_ip = "127.0.0.1"
-        self.gateway_port = 3671
+
+class connectionKNX:
+    def __init__(self, gatewayIp, gatewayPort):
+        # -> in this example, for sake of simplicity, the two ports are the same.
+        self.gateway_ip = gatewayIp
+        self.gateway_port = gatewayPort
+
         # -> Socket creation
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(('', 3672))
@@ -121,7 +123,7 @@ def main(argv):
 
     dest_addr_group = knxnet.GroupAddress.from_str("1/4/1")
 
-    c1 = connectionKNX()
+    c1 = connectionKNX("127.0.0.1", 3671)
     c1.send_data(dest_addr_group, 255, 2)
 
 
