@@ -5,12 +5,12 @@ import sys
 from knxnet import *
 
 # -> in this example, for sake of simplicity, the two ports are the same.
-def init():
-    gateway_ip = "127.0.0.1"
-    gateway_port = 3671
-    # -> Socket creation
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind(('', 3672))
+
+gateway_ip = "127.0.0.1"
+gateway_port = 3671
+# -> Socket creation
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.bind(('', 3672))
 
 
 
