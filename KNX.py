@@ -47,15 +47,11 @@ class connectionKNX:
 
         print('-----------------------------------')
 
-
-
-        # TODO
-
-    def establish_connection(self, data, acpi, data_size, dest_group_addr):
+    def establish_connection(self, data, data_size, acpi, dest_group_addr):
         #   -----------------------------------
         #   -> (1) Sending Connection request
         #   -----------------------------------
-        conn_resp_object = self.connectionRequest()
+        conn_resp_object = self.connection_request()
         # <- Retrieving channel_id & status from Connection response
         conn_channel_id = conn_resp_object.channel_id
         conn_status = conn_resp_object.status
@@ -66,7 +62,7 @@ class connectionKNX:
         #   -----------------------------------
         #   -> (2) Sending Connection State request
         #   -----------------------------------
-        state_resp_object = self.connectionStateRequest()
+        state_resp_object = self.connection_state_request()
         # <- Retrieving channel_id & status from Connection State response
         state_channel_id = state_resp_object.channel_id
         state_status = state_resp_object.status
@@ -76,7 +72,7 @@ class connectionKNX:
         #   -----------------------------------
         #   -> (3) Tunneling request
         #   -----------------------------------
-        tunnel_resp_object = self.tunnelingRequest(data, data_size, dest_group_addr, acpi)
+        tunnel_resp_object = self.tunneling_request(data, data_size, dest_group_addr, acpi)
         # <- Retrieving data from Tunneling response
         tunnel_channel_id = tunnel_resp_object.channel_id
         tunnel_status = tunnel_resp_object.status
@@ -112,7 +108,6 @@ class connectionKNX:
         conn_req_dtgrm = tunneling_ack.frame  # -> Serializing
         self.sock.sendto(conn_req_dtgrm, (self.gateway_ip, self.gateway_port))
 
-
     def tunneling_request_read(self):
         print('#4 Tunneling request read')
 
@@ -122,7 +117,7 @@ class connectionKNX:
 
         return tunnel_requ_resp_object
 
-    def tunnelingRequest(self, data, data_size, dest_group_addr, apci):
+    def tunneling_request(self, data, data_size, dest_group_addr, apci):
         print('#3 Tunneling request')
         tunneling_req = \
             knxnet.create_frame(knxnet.ServiceTypeDescriptor.TUNNELLING_REQUEST,
@@ -130,7 +125,7 @@ class connectionKNX:
                                 self.channel_id,
                                 data,
                                 data_size,
-                                apci)
+                                0)
         conn_req_dtgrm = tunneling_req.frame  # -> Serializing
         self.sock.sendto(conn_req_dtgrm, (self.gateway_ip, self.gateway_port))
 
@@ -139,7 +134,7 @@ class connectionKNX:
         tunnel_resp_object = knxnet.decode_frame(data_recv)
         return tunnel_resp_object
 
-    def connectionStateRequest(self):
+    def connection_state_request(self):
         print('#2 Connection State request')
         conn_state_req = \
             knxnet.create_frame(knxnet.ServiceTypeDescriptor.CONNECTION_STATE_REQUEST,
@@ -152,7 +147,7 @@ class connectionKNX:
         state_resp_object = knxnet.decode_frame(data_recv)
         return state_resp_object
 
-    def connectionRequest(self):
+    def connection_request(self):
         print('#1 Connection request')
         conn_req_object = \
             knxnet.create_frame(knxnet.ServiceTypeDescriptor.CONNECTION_REQUEST,
@@ -168,6 +163,9 @@ class connectionKNX:
     def read_data(self, data, data_size, acpi, dest_group_addr):
         """
         Read data from a KNX enabled device
+        :param data:
+        :param data_size:
+        :param acpi:
         :param dest_group_addr:
         :return:
         """
@@ -190,7 +188,6 @@ class connectionKNX:
         #   -> (5) Disconnect request
         #   -----------------------------------
 
-        #disconnect_resp_object = self.disconnect_request(conn_channel_id)
         disconnect_resp_object = self.disconnect_request()
 
         # <- Retrieving data from disconnect request
@@ -224,7 +221,7 @@ def main(argv):
     # set action
     c1.action = grp_add[0]
 
-    if grp_add[0] < '4':
+    if c1.action < '4':
         c1.send_data(data, size, apci, dest_addr_group)
 
     else:
