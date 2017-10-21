@@ -66,12 +66,7 @@ class connectionKNX:
         #   -> (4) Tunneling reqAck request
         #   -----------------------------------
 
-        print('#4 Tunneling ACK')
-
-        tunneling_ack = \
-            knxnet.create_frame(knxnet.ServiceTypeDescriptor.TUNNELLING_ACK, tunnel_channel_id, 0)
-        conn_req_dtgrm = tunneling_ack.frame  # -> Serializing
-        self.sock.sendto(conn_req_dtgrm, (self.gateway_ip, self.gateway_port))
+        self.tunneling_ack_request(tunnel_channel_id)
 
 
         print('-----------------------------------')
@@ -103,6 +98,15 @@ class connectionKNX:
         data_recv, addr = self.sock.recvfrom(1024)
         disconnect_resp_object = knxnet.decode_frame(data_recv)
         return disconnect_resp_object
+
+
+    def tunneling_ack_request(self, tunnel_channel_id):
+        print('#4 Tunneling ACK')
+        tunneling_ack = \
+            knxnet.create_frame(knxnet.ServiceTypeDescriptor.TUNNELLING_ACK, tunnel_channel_id, 0)
+        conn_req_dtgrm = tunneling_ack.frame  # -> Serializing
+        self.sock.sendto(conn_req_dtgrm, (self.gateway_ip, self.gateway_port))
+
 
     def tunnelingRequest(self, conn_channel_id, data, data_size, dest_group_addr):
         print('#3 Tunneling request')
