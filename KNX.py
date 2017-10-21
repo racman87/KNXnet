@@ -63,8 +63,19 @@ class connectionKNX:
         print('-----------------------------------')
 
         #   -----------------------------------
-        #   -> (3) Tunneling reqACKuest
+        #   -> (4) Tunneling reqACKuest
         #   -----------------------------------
+
+        #   -----------------------------------
+        #   -> (5) Disconnect request
+        #   -----------------------------------
+        disconn_resp_object = self.disconnectRequest(conn_channel_id)
+
+        # <- Retrieving channel_id & status from Connection State response
+        state_channel_id = disconn_resp_object.channel_id
+        state_status = disconn_resp_object.status
+        print('Channel ID: ', state_channel_id)
+        print('Channel status: ', state_status)
 
         print('#4 Tunneling ACK')
         # TODO
@@ -110,6 +121,18 @@ class connectionKNX:
         data_recv, addr = self.sock.recvfrom(1024)
         conn_resp_object = knxnet.decode_frame(data_recv)
         return conn_resp_object
+
+    def disconnectRequest(self, conn_channel_id):
+        # <- Send desconnect request
+        disconnect_req = knxnet.create_frame(knxnet.ServiceTypeDescriptor.DISCONNECT_REQUEST,
+                                             conn_channel_id,
+                                             self.control_endpoint)
+        self.sock.sendto(disconnect_req.frame, (self.gateway_ip, self.gateway_port))
+
+        # <- Receiving Connection State response
+        data_recv, addr = self.sock.recvfrom(1024)
+        disconn_resp_object = knxnet.decode_frame(data_recv)
+        return disconn_resp_object
 
     def read_data(self, dest_group_addr):
         data_endpoint = ('0.0.0.0', 0)
