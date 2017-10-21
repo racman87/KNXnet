@@ -13,17 +13,16 @@ def init():
     sock.bind(('', 3672))
 
 
-print('-----------------------------------')
-
-#   -----------------------------------
-#   -> (1) Sending Connection request
-#   -----------------------------------
 
 def send_data(dest_group_addr, data, data_size):
 
     data_endpoint = ('0.0.0.0', 0)
     control_endpoint = ('0.0.0.0', 0)
 
+
+    #   -----------------------------------
+    #   -> (1) Sending Connection request
+    #   -----------------------------------
     print('#1 Connection request')
     conn_req_object = \
 		knxnet.create_frame(knxnet.ServiceTypeDescriptor.CONNECTION_REQUEST,
