@@ -17,7 +17,7 @@ class connectionKNX:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(('', 3672))
 
-    def send_data(self, dest_group_addr, data, data_size):
+    def send_data(self, data, data_size, dest_group_addr):
         #   -----------------------------------
         #   -> (1) Sending Connection request
         #   -----------------------------------
@@ -155,19 +155,22 @@ class connectionKNX:
 
 
 def main(argv):
-    size = ''
-    data = ''
-    apci = ''
+    data = int(argv[0])
+    size = int(argv[1])
+    apci = argv[2]
+    grp_add = argv[3]
 
     print('First arg is "', argv[0])
     print('Second arg is "', argv[1])
+    print('Third arg is "', argv[2])
+    print('Fourth arg is "', argv[3])
 
     dest_addr_group = knxnet.GroupAddress.from_str("1/4/1")
 
     c1 = connectionKNX("127.0.0.1", 3671)
-    c1.send_data(dest_addr_group, 0, 1)
+    c1.send_data(data, size, dest_addr_group)
 
 
 if __name__ == "__main__":
-    # run in terminal with 'python3 KNX.py arg1 arg2'
+    # run in terminal with 'python3 KNX.py arg1 arg2 arg3'
     main(sys.argv[1:])
