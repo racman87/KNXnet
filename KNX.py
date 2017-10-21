@@ -22,11 +22,23 @@ class connectionKNX:
         self.sequence_counter = None
 
     def send_data(self, data, data_size, acpi, dest_group_addr):
+        """
+        Send command data to a KNX enabled device
+        :param data:
+        :param data_size:
+        :param acpi:
+        :param dest_group_addr:
+        :return:
+        """
+
+        #   -----------------------------------
+        #   -> (0) Establish connection
+        #   -----------------------------------
 
         self.establish_connection(data, acpi, data_size, dest_group_addr)
 
         #   -----------------------------------
-        #   -> (5) Tunneling ack request
+        #   -> (1) Send tunneling ack request
         #   -----------------------------------
 
         self.tunneling_ack_request()
@@ -34,7 +46,7 @@ class connectionKNX:
         print('-----------------------------------')
 
         #   -----------------------------------
-        #   -> (6) Disconnect request
+        #   -> (2) Disconnect request
         #   -----------------------------------
 
         disconnect_resp_object = self.disconnect_request()
@@ -47,7 +59,63 @@ class connectionKNX:
 
         print('-----------------------------------')
 
+    def read_data(self, data, data_size, acpi, dest_group_addr):
+        """
+        Read data from a KNX enabled device
+        :param data:
+        :param data_size:
+        :param acpi:
+        :param dest_group_addr:
+        :return:
+        """
+        #   -----------------------------------
+        #   -> (0) Establish connection
+        #   -----------------------------------
+
+        self.establish_connection(data, data_size, acpi, dest_group_addr)
+
+        #   -----------------------------------
+        #   -> (1) Send tunneling ack request
+        #   -----------------------------------
+
+        # <- Send Tunneling ack
+        tunnel_ack = knxnet.create_frame(knxnet.ServiceTypeDescriptor.TUNNELLING_ACK,
+                                         self.channel_id,
+                                         0,
+                                         self.sequence_counter)
+
+        self.sock.sendto(tunnel_ack.frame, (self.gateway_ip, self.gateway_port))
+
+        # <- Read Status
+        data_recv, addr = self.sock.recvfrom(1024)
+        tunnel_resp_object = knxnet.decode_frame(data_recv)
+
+        #   -----------------------------------
+        #   -> (2) Disconnect request
+        #   -----------------------------------
+
+        disconnect_resp_object = self.disconnect_request()
+
+        # <- Retrieving data from disconnect request
+        disconnect_channel_id = disconnect_resp_object.channel_id
+        disconnect_status = disconnect_resp_object.status
+        print('Channel ID: ', disconnect_channel_id)
+        print('Channel status: ', disconnect_status)
+
+        print('-----------------------------------')
+
+        return tunnel_resp_object.data
+
     def establish_connection(self, data, data_size, acpi, dest_group_addr):
+        """
+        Basic dialog between a client and the gateway to establish connection
+        and exchange according data
+        :param data: data to be sent: [0, 1] or [0..255]
+        :param data_size: data size, in bytes: [1, 2]
+        :param acpi: o for reading, 2 for writing
+        :param dest_group_addr: x/y/z
+        :return:
+        """
         #   -----------------------------------
         #   -> (1) Sending Connection request
         #   -----------------------------------
@@ -125,7 +193,7 @@ class connectionKNX:
                                 self.channel_id,
                                 data,
                                 data_size,
-                                0)
+                                apci)
         conn_req_dtgrm = tunneling_req.frame  # -> Serializing
         self.sock.sendto(conn_req_dtgrm, (self.gateway_ip, self.gateway_port))
 
@@ -159,46 +227,6 @@ class connectionKNX:
         data_recv, addr = self.sock.recvfrom(1024)
         conn_resp_object = knxnet.decode_frame(data_recv)
         return conn_resp_object
-
-    def read_data(self, data, data_size, acpi, dest_group_addr):
-        """
-        Read data from a KNX enabled device
-        :param data:
-        :param data_size:
-        :param acpi:
-        :param dest_group_addr:
-        :return:
-        """
-
-        self.establish_connection(data, data_size, acpi, dest_group_addr)
-
-        # <- Send Tunneling ack
-        tunnel_ack = knxnet.create_frame(knxnet.ServiceTypeDescriptor.TUNNELLING_ACK,
-                                         self.channel_id,
-                                         0,
-                                         self.sequence_counter)
-
-        self.sock.sendto(tunnel_ack.frame, (self.gateway_ip, self.gateway_port))
-
-        # <- Read Status
-        data_recv, addr = self.sock.recvfrom(1024)
-        tunnel_resp_object = knxnet.decode_frame(data_recv)
-
-        #   -----------------------------------
-        #   -> (5) Disconnect request
-        #   -----------------------------------
-
-        disconnect_resp_object = self.disconnect_request()
-
-        # <- Retrieving data from disconnect request
-        disconnect_channel_id = disconnect_resp_object.channel_id
-        disconnect_status = disconnect_resp_object.status
-        print('Channel ID: ', disconnect_channel_id)
-        print('Channel status: ', disconnect_status)
-
-        print('-----------------------------------')
-
-        return tunnel_resp_object.data
 
 
 def main(argv):
