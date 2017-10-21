@@ -5,27 +5,24 @@ import sys
 from knxnet import *
 
 
-
-
 class connectionKNX:
-    def __init__(self, gatewayIp, gatewayPort):
+    def __init__(self, gateway_ip, gateway_port):
         # -> in this example, for sake of simplicity, the two ports are the same.
-        self.gateway_ip = gatewayIp
-        self.gateway_port = gatewayPort
+        self.gateway_ip = gateway_ip
+        self.gateway_port = gateway_port
+        self.data_endpoint = ('0.0.0.0', 0)
+        self.control_endpoint = ('0.0.0.0', 0)
 
         # -> Socket creation
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(('', 3672))
 
     def send_data(self, dest_group_addr, data, data_size):
-        data_endpoint = ('0.0.0.0', 0)
-        control_endpoint = ('0.0.0.0', 0)
-
         #   -----------------------------------
         #   -> (1) Sending Connection request
         #   -----------------------------------
 
-        conn_resp_object = self.connectionRequest(control_endpoint, data_endpoint)
+        conn_resp_object = self.connectionRequest()
 
         # <- Retrieving channel_id & status from Connection response
         conn_channel_id = conn_resp_object.channel_id
@@ -39,13 +36,13 @@ class connectionKNX:
         #   -> (2) Sending Connection State request
         #   -----------------------------------
 
-        conn_resp_object = self.connectionStateRequest(conn_channel_id, conn_resp_object, control_endpoint)
+        state_resp_object = self.connectionStateRequest(conn_channel_id)
 
         # <- Retrieving channel_id & status from Connection State response
-        conn_channel_id = conn_resp_object.channel_id
-        conn_status = conn_resp_object.status
-        print('Channel ID: ', conn_channel_id)
-        print('Channel status: ', conn_status)
+        state_channel_id = state_resp_object.channel_id
+        state_status = state_resp_object.status
+        print('Channel ID: ', state_channel_id)
+        print('Channel status: ', state_status)
 
         print('-----------------------------------')
 
@@ -53,14 +50,14 @@ class connectionKNX:
         #   -> (3) Tunneling request
         #   -----------------------------------
 
-        conn_resp_object = self.tunnelingRequest(conn_channel_id, conn_resp_object, data, data_size, dest_group_addr)
+        tunnel_resp_object = self.tunnelingRequest(conn_channel_id, data, data_size, dest_group_addr)
 
         # <- Retrieving data from Tunneling response
-        conn_channel_id = conn_resp_object.channel_id
-        conn_status = conn_resp_object.status
-        sequ_counter = conn_resp_object.sequence_counter
-        print('Channel ID: ', conn_channel_id)
-        print('Channel status: ', conn_status)
+        tunnel_channel_id = tunnel_resp_object.channel_id
+        tunnel_status = tunnel_resp_object.status
+        sequ_counter = tunnel_resp_object.sequence_counter
+        print('Channel ID: ', tunnel_channel_id)
+        print('Channel status: ', tunnel_status)
         print('Sequence counter: ', sequ_counter)
 
         print('-----------------------------------')
@@ -72,7 +69,7 @@ class connectionKNX:
         print('#4 Tunneling ACK')
         # TODO
 
-    def tunnelingRequest(self, conn_channel_id, conn_resp_object, data, data_size, dest_group_addr):
+    def tunnelingRequest(self, conn_channel_id, data, data_size, dest_group_addr):
         print('#3 Tunneling request')
         tunneling_req = \
             knxnet.create_frame(knxnet.ServiceTypeDescriptor.TUNNELLING_REQUEST,
@@ -82,30 +79,33 @@ class connectionKNX:
                                 data_size)
         conn_req_dtgrm = tunneling_req.frame  # -> Serializing
         self.sock.sendto(conn_req_dtgrm, (self.gateway_ip, self.gateway_port))
+
         # <- Receiving Connection State response
         data_recv, addr = self.sock.recvfrom(1024)
-        conn_resp_object = knxnet.decode_frame(data_recv)
-        return conn_resp_object
+        tunnel_resp_object = knxnet.decode_frame(data_recv)
+        return tunnel_resp_object
 
-    def connectionStateRequest(self, conn_channel_id, conn_resp_object, control_endpoint):
+    def connectionStateRequest(self, conn_channel_id):
         print('#2 Connection State request')
         conn_state_req = \
             knxnet.create_frame(knxnet.ServiceTypeDescriptor.CONNECTION_STATE_REQUEST,
-                                conn_channel_id, control_endpoint)
+                                conn_channel_id, self.control_endpoint)
         conn_req_dtgrm = conn_state_req.frame  # -> Serializing
         self.sock.sendto(conn_req_dtgrm, (self.gateway_ip, self.gateway_port))
+
         # <- Receiving Connection State response
         data_recv, addr = self.sock.recvfrom(1024)
-        conn_resp_object = knxnet.decode_frame(data_recv)
-        return conn_resp_object
+        state_resp_object = knxnet.decode_frame(data_recv)
+        return state_resp_object
 
-    def connectionRequest(self, control_endpoint, data_endpoint):
+    def connectionRequest(self):
         print('#1 Connection request')
         conn_req_object = \
             knxnet.create_frame(knxnet.ServiceTypeDescriptor.CONNECTION_REQUEST,
-                                control_endpoint, data_endpoint)
+                                self.control_endpoint, self.data_endpoint)
         conn_req_dtgrm = conn_req_object.frame  # -> Serializing
         self.sock.sendto(conn_req_dtgrm, (self.gateway_ip, self.gateway_port))
+
         # <- Receiving Connection response
         data_recv, addr = self.sock.recvfrom(1024)
         conn_resp_object = knxnet.decode_frame(data_recv)
