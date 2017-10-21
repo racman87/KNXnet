@@ -4,17 +4,11 @@ import sys
 
 from knxnet import *
 
-gateway_ip = "127.0.0.1"
-gateway_port = 3671
-
 # -> in this example, for sake of simplicity, the two ports are the same.
-
-data_endpoint = ('0.0.0.0', 3672)
-control_endpoint = ('0.0.0.0', 3672)
-
-# -> Socket creation
-sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind(('', 3672))
+def init(gateway_ip = "127.0.0.1",gateway_port = 3671):
+	# -> Socket creation
+	sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+	sock.bind(('', 3672))
 
 
 print('-----------------------------------')
@@ -23,89 +17,98 @@ print('-----------------------------------')
 #   -> (1) Sending Connection request
 #   -----------------------------------
 
-print('#1 Connection request')
-conn_req_object = \
-    knxnet.create_frame(knxnet.ServiceTypeDescriptor.CONNECTION_REQUEST,
-                        control_endpoint, data_endpoint)
+def send_data(dest_group_addr, data, data_size):
 
-conn_req_dtgrm = conn_req_object.frame  # -> Serializing
-sock.sendto(conn_req_dtgrm, (gateway_ip, gateway_port))
+	data_endpoint = ('0.0.0.0', 0)
+	control_endpoint = ('0.0.0.0', 0)
 
-# <- Receiving Connection response
-data_recv, addr = sock.recvfrom(1024)
-conn_resp_object = knxnet.decode_frame(data_recv)
+	print('#1 Connection request')
+	conn_req_object = \
+		knxnet.create_frame(knxnet.ServiceTypeDescriptor.CONNECTION_REQUEST,
+							control_endpoint, data_endpoint)
 
-# <- Retrieving channel_id & status from Connection response
-conn_channel_id = conn_resp_object.channel_id
-conn_status = conn_resp_object.status
-print('Channel ID: ', conn_channel_id)
-print('Channel status: ', conn_status)
+	conn_req_dtgrm = conn_req_object.frame  # -> Serializing
+	sock.sendto(conn_req_dtgrm, (gateway_ip, gateway_port))
 
-print('-----------------------------------')
+	# <- Receiving Connection response
+	data_recv, addr = sock.recvfrom(1024)
+	conn_resp_object = knxnet.decode_frame(data_recv)
 
-#   -----------------------------------
-#   -> (2) Sending Connection State request
-#   -----------------------------------
+	# <- Retrieving channel_id & status from Connection response
+	conn_channel_id = conn_resp_object.channel_id
+	conn_status = conn_resp_object.status
+	print('Channel ID: ', conn_channel_id)
+	print('Channel status: ', conn_status)
 
-print('#2 Connection State request')
-conn_req_object = \
-    knxnet.create_frame(knxnet.ServiceTypeDescriptor.CONNECTION_STATE_REQUEST,
-                        conn_channel_id, control_endpoint)
+	print('-----------------------------------')
 
-conn_req_dtgrm = conn_req_object.frame  # -> Serializing
-sock.sendto(conn_req_dtgrm, (gateway_ip, gateway_port))
+	#   -----------------------------------
+	#   -> (2) Sending Connection State request
+	#   -----------------------------------
 
-# <- Receiving Connection State response
-data_recv, addr = sock.recvfrom(1024)
-conn_resp_object = knxnet.decode_frame(data_recv)
+	print('#2 Connection State request')
+	conn_req_object = \
+		knxnet.create_frame(knxnet.ServiceTypeDescriptor.CONNECTION_STATE_REQUEST,
+							conn_channel_id, control_endpoint)
 
-# <- Retrieving channel_id & status from Connection State response
-conn_channel_id = conn_resp_object.channel_id
-conn_status = conn_resp_object.status
-print('Channel ID: ', conn_channel_id)
-print('Channel status: ', conn_status)
+	conn_req_dtgrm = conn_req_object.frame  # -> Serializing
+	sock.sendto(conn_req_dtgrm, (gateway_ip, gateway_port))
 
-print('-----------------------------------')
+	# <- Receiving Connection State response
+	data_recv, addr = sock.recvfrom(1024)
+	conn_resp_object = knxnet.decode_frame(data_recv)
 
-#   -----------------------------------
-#   -> (3) Tunneling request
-#   -----------------------------------
+	# <- Retrieving channel_id & status from Connection State response
+	conn_channel_id = conn_resp_object.channel_id
+	conn_status = conn_resp_object.status
+	print('Channel ID: ', conn_channel_id)
+	print('Channel status: ', conn_status)
 
-print('#3 Tunneling request')
+	print('-----------------------------------')
 
-dest_addr_group = knxnet.GroupAddress.from_str("1/4/1")
+	#   -----------------------------------
+	#   -> (3) Tunneling request
+	#   -----------------------------------
 
-conn_req_object = \
-    knxnet.create_frame(knxnet.ServiceTypeDescriptor.TUNNELLING_REQUEST,
-                        dest_addr_group,
-                        conn_channel_id,
-                        255,
-                        2)
+	print('#3 Tunneling request')
 
-conn_req_dtgrm = conn_req_object.frame  # -> Serializing
-sock.sendto(conn_req_dtgrm, (gateway_ip, gateway_port))
+	dest_addr_group = knxnet.GroupAddress.from_str("1/4/1")
 
-# <- Receiving Connection State response
-data_recv, addr = sock.recvfrom(1024)
-conn_resp_object = knxnet.decode_frame(data_recv)
+	conn_req_object = \
+		knxnet.create_frame(knxnet.ServiceTypeDescriptor.TUNNELLING_REQUEST,
+							dest_addr_group,
+							conn_channel_id,
+							255,
+							2)
 
-# <- Retrieving data from Tunneling response
-conn_channel_id = conn_resp_object.channel_id
-conn_status = conn_resp_object.status
-sequ_counter = conn_resp_object.sequence_counter
-print('Channel ID: ', conn_channel_id)
-print('Channel status: ', conn_status)
-print('Sequence counter: ', sequ_counter)
+	conn_req_dtgrm = conn_req_object.frame  # -> Serializing
+	sock.sendto(conn_req_dtgrm, (gateway_ip, gateway_port))
 
-print('-----------------------------------')
+	# <- Receiving Connection State response
+	data_recv, addr = sock.recvfrom(1024)
+	conn_resp_object = knxnet.decode_frame(data_recv)
+
+	# <- Retrieving data from Tunneling response
+	conn_channel_id = conn_resp_object.channel_id
+	conn_status = conn_resp_object.status
+	sequ_counter = conn_resp_object.sequence_counter
+	print('Channel ID: ', conn_channel_id)
+	print('Channel status: ', conn_status)
+	print('Sequence counter: ', sequ_counter)
+
+	print('-----------------------------------')
 
 
-#   -----------------------------------
-#   -> (3) Tunneling reqACKuest
-#   -----------------------------------
+	#   -----------------------------------
+	#   -> (3) Tunneling reqACKuest
+	#   -----------------------------------
 
-print('#4 Tunneling ACK')
-# TODO
+	print('#4 Tunneling ACK')
+	# TODO
+
+def read_data(dest_group_addr):
+	data_endpoint = ('0.0.0.0', 0)
+	control_endpoint = ('0.0.0.0', 0)
 
 def main(argv):
     size = ''
