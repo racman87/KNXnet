@@ -27,9 +27,9 @@ class connectionKNX:
         # <- Retrieving channel_id & status from Connection response
         conn_channel_id = conn_resp_object.channel_id
         conn_status = conn_resp_object.status
+
         print('Channel ID: ', conn_channel_id)
         print('Channel status: ', conn_status)
-
         print('-----------------------------------')
 
         #   -----------------------------------
@@ -41,9 +41,9 @@ class connectionKNX:
         # <- Retrieving channel_id & status from Connection State response
         state_channel_id = state_resp_object.channel_id
         state_status = state_resp_object.status
+
         print('Channel ID: ', state_channel_id)
         print('Channel status: ', state_status)
-
         print('-----------------------------------')
 
         #   -----------------------------------
@@ -63,22 +63,46 @@ class connectionKNX:
         print('-----------------------------------')
 
         #   -----------------------------------
-        #   -> (4) Tunneling reqACKuest
+        #   -> (4) Tunneling reqAck request
         #   -----------------------------------
+
+        print('#4 Tunneling ACK')
+
+        tunneling_ack = \
+            knxnet.create_frame(knxnet.ServiceTypeDescriptor.TUNNELLING_ACK, tunnel_channel_id, 0)
+        conn_req_dtgrm = tunneling_ack.frame  # -> Serializing
+        self.sock.sendto(conn_req_dtgrm, (self.gateway_ip, self.gateway_port))
+
+
+        print('-----------------------------------')
 
         #   -----------------------------------
         #   -> (5) Disconnect request
         #   -----------------------------------
-        disconn_resp_object = self.disconnectRequest(conn_channel_id)
 
-        # <- Retrieving channel_id & status from Connection State response
-        state_channel_id = disconn_resp_object.channel_id
-        state_status = disconn_resp_object.status
-        print('Channel ID: ', state_channel_id)
-        print('Channel status: ', state_status)
+        disconnect_resp_object = self.disconnect_request(conn_channel_id)
+        disconnect_resp_object = self.disconnect_request(conn_channel_id)
 
-        print('#4 Tunneling ACK')
+        # <- Retrieving data from disconnect request
+        disconnect_channel_id = disconnect_resp_object.channel_id
+        disconnect_status = disconnect_resp_object.status
+        print('Channel ID: ', disconnect_channel_id)
+        print('Channel status: ', disconnect_status)
+
+        print('-----------------------------------')
+
+
         # TODO
+
+    def disconnect_request(self, conn_channel_id):
+        print('#5 Disconnect request')
+        disconnect_req = \
+            knxnet.create_frame(knxnet.ServiceTypeDescriptor.DISCONNECT_REQUEST, conn_channel_id, self.control_endpoint)
+        conn_req_dtgrm = disconnect_req.frame  # -> Serializing
+        self.sock.sendto(conn_req_dtgrm, (self.gateway_ip, self.gateway_port))
+        data_recv, addr = self.sock.recvfrom(1024)
+        disconnect_resp_object = knxnet.decode_frame(data_recv)
+        return disconnect_resp_object
 
     def tunnelingRequest(self, conn_channel_id, data, data_size, dest_group_addr):
         print('#3 Tunneling request')
@@ -122,18 +146,6 @@ class connectionKNX:
         conn_resp_object = knxnet.decode_frame(data_recv)
         return conn_resp_object
 
-    def disconnectRequest(self, conn_channel_id):
-        # <- Send desconnect request
-        disconnect_req = knxnet.create_frame(knxnet.ServiceTypeDescriptor.DISCONNECT_REQUEST,
-                                             conn_channel_id,
-                                             self.control_endpoint)
-        self.sock.sendto(disconnect_req.frame, (self.gateway_ip, self.gateway_port))
-
-        # <- Receiving Connection State response
-        data_recv, addr = self.sock.recvfrom(1024)
-        disconn_resp_object = knxnet.decode_frame(data_recv)
-        return disconn_resp_object
-
     def read_data(self, dest_group_addr):
         data_endpoint = ('0.0.0.0', 0)
         control_endpoint = ('0.0.0.0', 0)
@@ -153,8 +165,9 @@ def main(argv):
     dest_addr_group = knxnet.GroupAddress.from_str("1/4/1")
 
     c1 = connectionKNX("127.0.0.1", 3671)
-    c1.send_data(dest_addr_group, 255, 2)
+    c1.send_data(dest_addr_group, 0, 1)
 
 
 if __name__ == "__main__":
+    # run in terminal with 'python3 KNX.py arg1 arg2'
     main(sys.argv[1:])
