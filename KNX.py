@@ -47,11 +47,11 @@ class connectionKNX:
         #   -----------------------------------
 
         print('#2 Connection State request')
-        conn_req_object = \
+        conn_state_req = \
             knxnet.create_frame(knxnet.ServiceTypeDescriptor.CONNECTION_STATE_REQUEST,
                                 conn_channel_id, control_endpoint)
 
-        conn_req_dtgrm = conn_req_object.frame  # -> Serializing
+        conn_req_dtgrm = conn_state_req.frame  # -> Serializing
         self.sock.sendto(conn_req_dtgrm, (self.gateway_ip, self.gateway_port))
 
         # <- Receiving Connection State response
@@ -72,14 +72,14 @@ class connectionKNX:
 
         print('#3 Tunneling request')
 
-        conn_req_object = \
+        tunneling_req = \
             knxnet.create_frame(knxnet.ServiceTypeDescriptor.TUNNELLING_REQUEST,
                                 dest_group_addr,
                                 conn_channel_id,
                                 data,
                                 data_size)
 
-        conn_req_dtgrm = conn_req_object.frame  # -> Serializing
+        conn_req_dtgrm = tunneling_req.frame  # -> Serializing
         self.sock.sendto(conn_req_dtgrm, (self.gateway_ip, self.gateway_port))
 
         # <- Receiving Connection State response
